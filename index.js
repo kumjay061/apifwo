@@ -1,89 +1,39 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 
 const app = express();
-const port = 3000;
-
-// Body-parser middleware
 app.use(bodyParser.json());
 
-// SQLite Database Initialization
-let db = new sqlite3.Database(':memory:');
+const FORWARDING_NUMBER_FILE = './forwarding_number.json';
 
-// Create table to store forward number and SMS data
-db.serialize(() => {
-    db.run("CREATE TABLE forwarder (id INTEGER PRIMARY KEY, number TEXT)");
-    db.run("CREATE TABLE sms (id INTEGER PRIMARY KEY, sender TEXT, message TEXT)");
-
-    // Insert default forwarder number (initial value)
-    db.run("INSERT INTO forwarder (number) VALUES ('+919876543210')");
-});
-
-// Route to get current forwarder number
-app.get('/forward-number', (req, res) => {
-    db.get("SELECT number FROM forwarder WHERE id = 1", (err, row) => {
+// फ़ॉरवर्डिंग नंबर को पढ़ने की API (अब सीधे `/get-forward-number` पर उपलब्ध)
+app.get('/get-forward-number', (req, res) => {
+    fs.readFile(FORWARDING_NUMBER_FILE, 'utf8', (err, data) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: 'Unable to read forwarding number' });
         }
-        res.json({ forwardNumber: row.number });
+        res.json({ number: JSON.parse(data).number });
     });
 });
 
-// Route to set a new forwarder number
+// फ़ॉरवर्डिंग नंबर को सेट करने की API (अब सीधे `/set-forward-number` पर उपलब्ध)
 app.post('/set-forward-number', (req, res) => {
     const { number } = req.body;
-    if (!number) {
-        return res.status(400).json({ error: 'Forward number is required' });
+
+    if (!number || !/^\+?\d+$/.test(number)) {
+        return res.status(400).json({ error: 'Invalid phone number' });
     }
 
-    db.run("UPDATE forwarder SET number = ? WHERE id = 1", [number], function(err) {
+    fs.writeFile(FORWARDING_NUMBER_FILE, JSON.stringify({ number }), (err) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: 'Failed to save forwarding number' });
         }
-        res.json({ message: 'Forwarder number updated successfully' });
+        res.json({ message: 'Forwarding number updated successfully' });
     });
 });
 
-// Route to forward SMS (POST from Android app)
-app.post('/forward-sms', (req, res) => {
-    const { sender, message } = req.body;
-
-    if (!sender || !message) {
-        return res.status(400).json({ error: 'Sender and message are required' });
-    }
-
-    // Store the received SMS in the database
-    db.run("INSERT INTO sms (sender, message) VALUES (?, ?)", [sender, message], function(err) {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-
-        // Get the current forwarder number
-        db.get("SELECT number FROM forwarder WHERE id = 1", (err, row) => {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
-
-            // Simulate forwarding the SMS (in a real app, use an SMS gateway)
-            console.log(`Forwarding SMS from ${sender}: "${message}" to ${row.number}`);
-
-            res.json({ message: `SMS forwarded to ${row.number}` });
-        });
-    });
-});
-
-// Route to get all received SMS
-app.get('/read-sms', (req, res) => {
-    db.all("SELECT * FROM sms", [], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json({ smsList: rows });
-    });
-});
-
-// Start the server
-app.listen(port, () => {
-    console.log(`API server running at http://localhost:${port}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
