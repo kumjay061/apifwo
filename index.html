@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Forwarding Number</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        h2 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        input[type="text"], input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .message {
+            text-align: center;
+            margin-top: 10px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Edit Forwarding Number</h2>
+        <form id="forward-number-form">
+            <label for="number">New Forwarding Number:</label>
+            <input type="text" id="number" name="number" placeholder="Enter new forwarding number" required>
+
+            <input type="submit" value="Update Number">
+        </form>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('forward-number-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const number = document.getElementById('number').value;
+
+            try {
+                const response = await fetch('https://your-app-name.vercel.app/set-forward-number', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ number }),
+                });
+
+                const data = await response.json();
+                const messageDiv = document.getElementById('message');
+
+                if (response.ok) {
+                    messageDiv.textContent = 'Forwarding number updated successfully!';
+                } else {
+                    messageDiv.textContent = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                console.error('Error updating number:', error);
+                document.getElementById('message').textContent = 'An error occurred while updating the number.';
+            }
+        });
+    </script>
+</body>
+</html>
