@@ -12,7 +12,11 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/set-forward-number",
+      "dest": "/index.js"
+    },
+    {
+      "src": "/get-forward-number",
       "dest": "/index.js"
     },
     {
@@ -21,4 +25,3 @@
     }
   ]
 }
-
