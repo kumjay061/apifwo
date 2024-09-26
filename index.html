@@ -63,7 +63,7 @@
             const number = document.getElementById('number').value;
 
             try {
-                const response = await fetch('https://your-app-name.vercel.app/set-forward-number', {
+                const response = await fetch('/set-forward-number', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
